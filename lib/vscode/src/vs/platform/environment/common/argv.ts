@@ -30,6 +30,7 @@ export interface NativeParsedArgs {
 	'prof-startup'?: boolean;
 	'prof-startup-prefix'?: string;
 	'prof-append-timers'?: string;
+	'prof-v8-extensions'?: boolean;
 	verbose?: boolean;
 	trace?: boolean;
 	'trace-category-filter'?: string;
@@ -40,8 +41,9 @@ export interface NativeParsedArgs {
 	'extensions-dir'?: string;
 	'extensions-download-dir'?: string;
 	'builtin-extensions-dir'?: string;
-	extensionDevelopmentPath?: string[]; // // undefined or array of 1 or more local paths or URIs
+	extensionDevelopmentPath?: string[]; // undefined or array of 1 or more local paths or URIs
 	extensionTestsPath?: string; // either a local path or a URI
+	extensionDevelopmentKind?: string[];
 	'inspect-extensions'?: string;
 	'inspect-brk-extensions'?: string;
 	debugId?: string;
@@ -64,6 +66,7 @@ export interface NativeParsedArgs {
 	'export-default-configuration'?: string;
 	'install-source'?: string;
 	'disable-updates'?: boolean;
+	'disable-keytar'?: boolean;
 	'disable-crash-reporter'?: boolean;
 	'crash-reporter-directory'?: string;
 	'crash-reporter-id'?: string;
@@ -97,4 +100,5 @@ export interface NativeParsedArgs {
 	'ignore-certificate-errors'?: boolean;
 	'allow-insecure-localhost'?: boolean;
 	'log-net-log'?: string;
+	'vmodule'?: string;
 }

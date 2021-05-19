@@ -7,7 +7,9 @@
 - [Community Projects (awesome-code-server)](#community-projects-awesome-code-server)
 - [How can I reuse my VS Code configuration?](#how-can-i-reuse-my-vs-code-configuration)
 - [Differences compared to VS Code?](#differences-compared-to-vs-code)
+  - [Installing an extension](#installing-an-extension)
 - [How can I request a missing extension?](#how-can-i-request-a-missing-extension)
+- [Installing an extension manually](#installing-an-extension-manually)
 - [How do I configure the marketplace URL?](#how-do-i-configure-the-marketplace-url)
 - [Where are extensions stored?](#where-are-extensions-stored)
 - [How is this different from VS Code Codespaces?](#how-is-this-different-from-vs-code-codespaces)
@@ -26,9 +28,9 @@
 - [Heartbeat File](#heartbeat-file)
 - [Healthz endpoint](#healthz-endpoint)
 - [How does the config file work?](#how-does-the-config-file-work)
-- [How do I customize the "Go Home" button?](#how-do-i-customize-the-go-home-button)
 - [Isn't an install script piped into sh insecure?](#isnt-an-install-script-piped-into-sh-insecure)
 - [How do I make my keyboard shortcuts work?](#how-do-i-make-my-keyboard-shortcuts-work)
+- [How do I access my Documents/Downloads/Desktop folders in code-server on OSX?](#how-do-i-access-my-documentsdownloadsdesktop-folders-in-code-server-on-osx)
 - [Differences compared to Theia?](#differences-compared-to-theia)
 - [`$HTTP_PROXY`, `$HTTPS_PROXY`, `$NO_PROXY`](#http_proxy-https_proxy-no_proxy)
 - [Enterprise](#enterprise)
@@ -37,7 +39,7 @@
 
 ## Questions?
 
-Please file all questions and support requests at https://github.com/cdr/code-server/discussions.
+Please file all questions and support requests at <https://github.com/cdr/code-server/discussions>.
 
 ## iPad Status?
 
@@ -83,15 +85,43 @@ These are the closed source extensions presently unavailable:
 
 For more about the closed source parts of VS Code, see [vscodium/vscodium](https://github.com/VSCodium/vscodium#why-does-this-exist).
 
+### Installing an extension
+
+Extensions can be installed from the marketplace using the extensions sidebar in
+code-server or from the command line:
+
+```shell
+code-server --install-extension <extension id>
+# example: code-server --install-extension wesbos.theme-cobalt2
+```
+
 ## How can I request a missing extension?
 
-Please open a new issue and select the `Extension request` template.
+We are currently in the process of transitioning to [Open VSX](https://open-vsx.org/).
+Once <https://github.com/eclipse/openvsx/issues/249>
+is implemented, we can fully make this transition. Therefore, we are no longer
+accepting new requests for extension requests.
 
-If an extension is not available or does not work, you can grab its VSIX from its Github releases or
-build it yourself. Then run the `Extensions: Install from VSIX` command in the Command Palette and
-point to the .vsix file.
+Instead, we suggest one of the following:
 
-See below for installing an extension from the cli.
+- [Switch to Open VSX](#how-do-i-configure-the-marketplace-url) now
+- Download and [install the extension manually](#installing-an-extension-manually)
+
+## Installing an extension manually
+
+If an extension is not available from the marketplace or does not work, you can
+grab its VSIX from its GitHub releases or build it yourself.
+
+Once you have downloaded the VSIX to the remote machine you can either:
+
+- Run the `Extensions: Install from VSIX` command in the Command Palette.
+- Use `code-server --install-extension <path to vsix>`
+
+You can also download extensions from the command line. For instance, downloading off OpenVSX can be done like this:
+
+```shell
+SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension <extension id>
+```
 
 ## How do I configure the marketplace URL?
 
@@ -110,7 +140,7 @@ While you can technically use Microsoft's marketplace with these, please do not 
 is against their terms of use. See [above](#differences-compared-to-vs-code) and this
 discussion regarding the use of the Microsoft URLs in forks:
 
-https://github.com/microsoft/vscode/issues/31168#issue-244533026
+<https://github.com/microsoft/vscode/issues/31168#issue-244533026>
 
 See also [VSCodium's docs](https://github.com/VSCodium/vscodium/blob/master/DOCS.md#extensions--marketplace).
 
@@ -221,7 +251,7 @@ ensure your reverse proxy forwards that information if you are using one.
 
 HTTP servers should strive to use relative URLs to avoid needed to be coupled to the
 absolute path at which they are served. This means you must use trailing slashes on all
-paths with subpaths. See https://blog.cdivilly.com/2019/02/28/uri-trailing-slashes
+paths with subpaths. See <https://blog.cdivilly.com/2019/02/28/uri-trailing-slashes>
 
 This is really the "correct" way things work and why the striping of the base path is the
 default. If your application uses relative URLs and does not assume the absolute path at
@@ -260,8 +290,8 @@ Highly recommend using the subdomain approach instead to avoid this class of iss
 
 If you want to run multiple code-servers on shared infrastructure, we recommend using virtual
 machines with a VM per user. This will easily allow users to run a docker daemon. If you want
-to use kubernetes, you'll definitely want to use [kubevirt](https://kubevirt.io) to give each
-user a virtual machine instead of just a container.
+to use kubernetes, you'll definitely want to use [kubevirt](https://kubevirt.io) or [sysbox](https://github.com/nestybox/sysbox) to give each
+user a VM-like experience instead of just a container.
 
 ## Docker in code-server container?
 
@@ -301,8 +331,8 @@ Once this is done, replicate the issue you're having then collect logging
 information from the following places:
 
 1. The most recent files from `~/.local/share/code-server/coder-logs`.
-2. The most recently created directory in the `~/.local/share/code-server/logs` directory.
-3. The browser console and network tabs.
+2. The browser console.
+3. The browser network tab.
 
 Additionally, collecting core dumps (you may need to enable them first) if
 code-server crashes can be helpful.
@@ -354,16 +384,6 @@ The `--config` flag or `$CODE_SERVER_CONFIG` can be used to change the config fi
 
 The default location also respects `$XDG_CONFIG_HOME`.
 
-## How do I customize the "Go Home" button?
-
-You can pass a URL to the `--home` flag like this:
-
-```
-code-server --home=https://my-website.com
-```
-
-Or you can define it in the config file with `home`.
-
 ## Isn't an install script piped into sh insecure?
 
 Please give
@@ -380,6 +400,25 @@ Once you've entered the editor, click the "plus" icon present in the URL toolbar
 This will install a Chrome PWA and now all keybindings will work!
 
 For other browsers you'll have to remap keybindings unfortunately.
+
+## How do I access my Documents/Downloads/Desktop folders in code-server on OSX?
+
+Newer versions of macOS require permission through a non-UNIX mechanism for access to the Desktop, Documents, Pictures, Downloads, and other folders.
+
+You may have to give Node "full disk access" since it doesn't implement any of the macOS permission request stuff natively.
+
+1. Find where Node is installed on your machine
+
+   ```console
+   ➜ ~ which node
+   /usr/local/bin/node
+   ```
+
+1. Grant Node Full Disk Access:
+
+Open System Preferences > Security & Privacy > Privacy (horizontal) tab > Full Disk Access (vertical) tab > Click the 🔒 to unlock > Click + and select the Node binary you located.
+
+See [#2794](https://github.com/cdr/code-server/issues/2794) for context on this.
 
 ## Differences compared to Theia?
 

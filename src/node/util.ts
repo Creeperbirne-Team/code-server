@@ -1,18 +1,17 @@
 import * as cp from "child_process"
 import * as crypto from "crypto"
 import envPaths from "env-paths"
-import * as fs from "fs-extra"
+import { promises as fs } from "fs"
 import * as net from "net"
 import * as os from "os"
 import * as path from "path"
 import * as util from "util"
 import xdgBasedir from "xdg-basedir"
 
-export const tmpdir = path.join(os.tmpdir(), "code-server")
-
-interface Paths {
+export interface Paths {
   data: string
   config: string
+  runtime: string
 }
 
 export const paths = getEnvPaths()
@@ -22,23 +21,34 @@ export const paths = getEnvPaths()
  * On MacOS this function gets the standard XDG directories instead of using the native macOS
  * ones. Most CLIs do this as in practice only GUI apps use the standard macOS directories.
  */
-function getEnvPaths(): Paths {
-  let paths: Paths
-  if (process.platform === "win32") {
-    paths = envPaths("code-server", {
-      suffix: "",
-    })
-  } else {
-    if (xdgBasedir.data === undefined || xdgBasedir.config === undefined) {
-      throw new Error("No home folder?")
-    }
-    paths = {
-      data: path.join(xdgBasedir.data, "code-server"),
-      config: path.join(xdgBasedir.config, "code-server"),
-    }
+export function getEnvPaths(): Paths {
+  const paths = envPaths("code-server", { suffix: "" })
+  const append = (p: string): string => path.join(p, "code-server")
+  switch (process.platform) {
+    case "darwin":
+      return {
+        // envPaths uses native directories so force Darwin to use the XDG spec
+        // to align with other CLI tools.
+        data: xdgBasedir.data ? append(xdgBasedir.data) : paths.data,
+        config: xdgBasedir.config ? append(xdgBasedir.config) : paths.config,
+        // Fall back to temp if there is no runtime dir.
+        runtime: xdgBasedir.runtime ? append(xdgBasedir.runtime) : paths.temp,
+      }
+    case "win32":
+      return {
+        data: paths.data,
+        config: paths.config,
+        // Windows doesn't have a runtime dir.
+        runtime: paths.temp,
+      }
+    default:
+      return {
+        data: paths.data,
+        config: paths.config,
+        // Fall back to temp if there is no runtime dir.
+        runtime: xdgBasedir.runtime ? append(xdgBasedir.runtime) : paths.temp,
+      }
   }
-
-  return paths
 }
 
 /**
@@ -58,8 +68,11 @@ export const generateCertificate = async (hostname: string): Promise<{ cert: str
   const certPath = path.join(paths.data, `${hostname.replace(/\./g, "_")}.crt`)
   const certKeyPath = path.join(paths.data, `${hostname.replace(/\./g, "_")}.key`)
 
-  const checks = await Promise.all([fs.pathExists(certPath), fs.pathExists(certKeyPath)])
-  if (!checks[0] || !checks[1]) {
+  // Try generating the certificates if we can't access them (which probably
+  // means they don't exist).
+  try {
+    await Promise.all([fs.access(certPath), fs.access(certKeyPath)])
+  } catch (error) {
     // Require on demand so openssl isn't required if you aren't going to
     // generate certificates.
     const pem = require("pem") as typeof import("pem")
@@ -86,9 +99,10 @@ DNS.1 = ${hostname}
         },
       )
     })
-    await fs.mkdirp(paths.data)
+    await fs.mkdir(paths.data, { recursive: true })
     await Promise.all([fs.writeFile(certPath, certs.certificate), fs.writeFile(certKeyPath, certs.serviceKey)])
   }
+
   return {
     cert: certPath,
     certKey: certKeyPath,

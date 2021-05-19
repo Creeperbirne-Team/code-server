@@ -1,12 +1,14 @@
 import { field } from '@coder/logger';
 import { setUnexpectedErrorHandler } from 'vs/base/common/errors';
-import { CodeServerMessage, VscodeMessage } from 'vs/server/ipc';
+import * as proxyAgent from 'vs/base/node/proxy_agent';
+import { CodeServerMessage, VscodeMessage } from 'vs/ipc';
 import { logger } from 'vs/server/node/logger';
 import { enableCustomMarketplace } from 'vs/server/node/marketplace';
 import { Vscode } from 'vs/server/node/server';
-import * as proxyAgent from 'vs/base/node/proxy_agent';
 
-setUnexpectedErrorHandler((error) => logger.warn(error instanceof Error ? error.message : error));
+setUnexpectedErrorHandler((error) => {
+	logger.warn('Uncaught error', field('error', error instanceof Error ? error.message : error));
+});
 enableCustomMarketplace();
 proxyAgent.monkeyPatch(true);
 
@@ -68,7 +70,7 @@ process.on('message', async (message: CodeServerMessage, socket) => {
 			}
 			break;
 		case 'socket':
-			vscode.handleWebSocket(socket, message.query);
+			vscode.handleWebSocket(socket, message.query, message.permessageDeflate);
 			break;
 	}
 });

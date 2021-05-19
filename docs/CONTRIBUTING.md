@@ -3,9 +3,11 @@
 # Contributing
 
 - [Pull Requests](#pull-requests)
+  - [Commits](#commits)
 - [Requirements](#requirements)
 - [Development Workflow](#development-workflow)
   - [Updating VS Code](#updating-vs-code)
+    - [Notes about Changes](#notes-about-changes)
 - [Build](#build)
 - [Structure](#structure)
   - [Modifications to VS Code](#modifications-to-vs-code)
@@ -22,23 +24,33 @@ you'd like to address unless the proposed fix is minor.
 
 In your Pull Requests (PR), link to the issue that the PR solves.
 
-Please ensure that the base of your PR is the **master** branch. (Note: The default
-GitHub branch is the latest release branch, though you should point all of your changes to be merged into
-master).
+Please ensure that the base of your PR is the **main** branch.
+
+### Commits
+
+We prefer a clean commit history. This means you should squash all fixups and fixup-type commits before asking for review (cleanup, squash, force-push). If you need help with this, feel free to leave a comment in your PR and we'll guide you.
 
 ## Requirements
 
 The prerequisites for contributing to code-server are almost the same as those for
 [VS Code](https://github.com/Microsoft/vscode/wiki/How-to-Contribute#prerequisites).
-There are several differences, however. You must:
+There are several differences, however. Here is what is needed:
 
-- Use Node.js version 12.x (or greater)
-- Have [yarn](https://classic.yarnpkg.com/en/) installed (which is used to install JS packages and run development scripts)
-- Have [nfpm](https://github.com/goreleaser/nfpm) (which is used to build `.deb` and `.rpm` packages and [jq](https://stedolan.github.io/jq/) (used to build code-server releases) installed
-- Have [shfmt](https://pkg.go.dev/mvdan.cc/sh/v3) installed to run `yarn fmt` (requires Go is installed on your system)
-
-The [CI container](../ci/images/debian10/Dockerfile) is a useful reference for all
-of the dependencies code-server uses.
+- `node` v12.x or greater
+- `git` v2.x or greater
+- [`yarn`](https://classic.yarnpkg.com/en/)
+  - used to install JS packages and run scripts
+- [`nfpm`](https://classic.yarnpkg.com/en/)
+  - used to build `.deb` and `.rpm` packages
+- [`jq`](https://stedolan.github.io/jq/)
+  - used to build code-server releases
+- [`gnupg`](https://gnupg.org/index.html)
+  - all commits must be signed and verified
+  - see GitHub's ["Managing commit signature verification"](https://docs.github.com/en/github/authenticating-to-github/managing-commit-signature-verification) or follow [this tutorial](https://joeprevite.com/verify-commits-on-github)
+- `build-essential` (Linux)
+  - `apt-get install -y build-essential` - used by VS Code
+- `rsync` and `unzip`
+  - used for code-server releases
 
 ## Development Workflow
 
@@ -48,32 +60,34 @@ yarn watch
 # Visit http://localhost:8080 once the build is completed.
 ```
 
-To develop inside an isolated Docker container:
-
-```shell
-./ci/dev/image/run.sh yarn
-./ci/dev/image/run.sh yarn watch
-```
-
 `yarn watch` will live reload changes to the source.
 
 ### Updating VS Code
 
-If you need to update VS Code, you can update the subtree with one line. Here's an example using the version 1.52:
+Updating VS Code requires `git subtree`. On some rpm-based Linux distros, `git subtree` is not included by default, and needs to be installed separately.
+To install, run `dnf install git-subtree` or `yum install git-subtree` as necessary.
 
-```shell
-# Add vscode as a new remote if you haven't already and fetch
-git remote add -f vscode https://github.com/microsoft/vscode.git
+To update VS Code, follow these steps:
 
-git subtree pull --prefix lib/vscode vscode release/1.52 --squash --message "Update VS Code to 1.52"
-```
+1. Run `yarn update:vscode`.
+2. Enter a version. Ex. 1.53
+3. This will open a draft PR for you.
+4. There will be merge conflicts. First commit them.
+   1. We do this because if we don't, it will be impossible to review your PR.
+5. Once they're all fixed, test code-server locally and make sure it all works.
+
+#### Notes about Changes
+
+- watch out for updates to `lib/vscode/src/vs/code/browser/workbench/workbench.html`. You may need to make changes to `src/browser/pages/vscode.html`
 
 ## Build
 
 You can build using:
 
 ```shell
-./ci/dev/image/run.sh ./ci/steps/release.sh
+yarn build
+yarn build:vscode
+yarn release
 ```
 
 Run your build with:
@@ -85,24 +99,7 @@ yarn --production
 node .
 ```
 
-Build the release packages (make sure that you run `./ci/steps/release.sh` first):
-
-```shell
-IMAGE=centos7 ./ci/dev/image/run.sh ./ci/steps/release-packages.sh
-# The standalone release is in ./release-standalone
-# .deb, .rpm and the standalone archive are in ./release-packages
-```
-
-The `release.sh` script is equal to running:
-
-```shell
-yarn
-yarn build
-yarn build:vscode
-yarn release
-```
-
-And `release-packages.sh` is equal to:
+Build the release packages (make sure that you run `yarn release` first):
 
 ```shell
 yarn release:standalone
@@ -110,12 +107,10 @@ yarn test:standalone-release
 yarn package
 ```
 
-For a faster release build, you can run instead:
-
-```shell
-KEEP_MODULES=1 ./ci/steps/release.sh
-node ./release
-```
+NOTE: On Linux, the currently running distro will become the minimum supported version.
+In our GitHub Actions CI, we use CentOS 7 for maximum compatibility.
+If you need your builds to support older distros, run the build commands
+inside a Docker container with all the build requirements installed.
 
 ## Structure
 
